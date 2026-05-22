@@ -21,7 +21,12 @@ public class Weapon : MonoBehaviour
     public GameObject bulletPrefab; 
     public float bulletSpeed = 500f;
     private int layerMask;
+    [Header("Shooting")]
+    public float shootingDelay = 0.2f;
     private bool isShooting;
+    private bool readyToShoot = true;
+    public bool allowReset = true;
+    public ParticleSystem muzzleFlash;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -40,7 +45,7 @@ public class Weapon : MonoBehaviour
         {
            isShooting = Input.GetKeyDown(KeyCode.Mouse0);
         }
-        if (isShooting)
+        if (isShooting && readyToShoot)
         {
             FireWeapon();
         }
@@ -48,10 +53,26 @@ public class Weapon : MonoBehaviour
 
     private void FireWeapon()
     {
+        muzzleFlash.Play();
         Vector3 shootingDirection = CalculateDirectionAndSpread().normalized;
         GameObject bullet = Instantiate(bulletPrefab, bulletSpawn.position, Quaternion.identity);
-        bullet.transform.forward = bulletSpawn.forward;
-        bullet.GetComponent<Rigidbody>().linearVelocity = shootingDirection * bulletSpeed * Time.deltaTime; 
+        bullet.GetComponent<Rigidbody>().linearVelocity = shootingDirection * bulletSpeed * Time.deltaTime;
+        Destroy(bullet, 3f);
+        if (allowReset)
+        {
+            readyToShoot = false;
+            Invoke(nameof(ResetShoot), shootingDelay);
+        }
+        else
+        {
+            Invoke("FireWeapon", shootingDelay);
+        }
+    }
+
+    private void ResetShoot()
+    {
+        readyToShoot = true;
+        allowReset = true;
     }
 
     private Vector3 CalculateDirectionAndSpread()
